@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReklaFlow – Lieferantenreklamationen ohne Excel-Chaos</title>
+<meta name="description" content="ReklaFlow bündelt Lieferantenreklamationen, Fristen, Stellungnahmen und 8D-Berichte in einem einfachen Workflow. Praxispartner für den ersten Test gesucht.">
+<style>
+:root{
+ --ink:#102435;--muted:#667381;--brand:#153c58;--brand2:#1e5a7e;--bg:#f6f8fa;--line:#dfe5ea;--card:#fff;--soft:#eaf2f7;
+ --ok:#176542;--warn:#996515;--radius:20px;--shadow:0 18px 50px rgba(16,36,53,.09)
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:16px/1.6 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:var(--ink)}
+a{text-decoration:none;color:inherit}.wrap{width:min(1160px,calc(100% - 40px));margin:auto}
+nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef1f3}
+.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:850}.mark{width:36px;height:36px;border-radius:11px;background:var(--brand);color:#fff;display:grid;place-items:center}
+.navlinks{display:flex;align-items:center;gap:22px;color:#53616d;font-size:14px;font-weight:650}.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:11px 16px;font-weight:800;border:1px solid var(--line);background:#fff}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}.btn.primary:hover{background:var(--brand2)}
+.hero{padding:92px 0 76px;background:linear-gradient(180deg,#fff 0,#f7f9fb 100%)}.heroGrid{display:grid;grid-template-columns:1.05fr .95fr;gap:62px;align-items:center}
+.eyebrow{display:inline-flex;padding:7px 10px;border-radius:999px;background:var(--soft);color:#245b78;font-size:12px;font-weight:850;letter-spacing:.05em;text-transform:uppercase;margin-bottom:18px}
+h1{font-size:clamp(42px,6vw,68px);line-height:1.02;letter-spacing:-.045em;margin:0 0 22px;max-width:800px}h1 span{color:#2b6487}
+.lead{font-size:20px;line-height:1.55;color:#596773;max-width:700px;margin:0 0 29px}.cta{display:flex;gap:11px;flex-wrap:wrap}.fine{font-size:12px;color:#7e8992;margin-top:13px}
+.mock{background:#102a3e;border-radius:25px;padding:20px;box-shadow:0 32px 80px rgba(16,42,62,.22);transform:rotate(1deg)}.window{background:#f7f8fa;border-radius:16px;overflow:hidden}.windowTop{height:42px;background:#fff;border-bottom:1px solid #e5e9ed;display:flex;align-items:center;gap:6px;padding:0 14px}.dot{width:8px;height:8px;border-radius:50%;background:#d8dde2}.dash{padding:17px}.dashTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-weight:850}.tinyButton{background:#173b57;color:white;border-radius:8px;padding:6px 8px;font-size:9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:white;border:1px solid #e6eaee;border-radius:10px;padding:10px}.stat small{display:block;color:#7f8991;font-size:8px;text-transform:uppercase;font-weight:800}.stat b{font-size:18px}.miniTable{margin-top:10px;background:#fff;border:1px solid #e6eaee;border-radius:10px;overflow:hidden}.row{display:grid;grid-template-columns:1fr 1.25fr .8fr;gap:6px;padding:9px 10px;border-bottom:1px solid #edf0f2;font-size:8px}.row:last-child{border:0}.pill{justify-self:start;border-radius:99px;padding:3px 6px;background:#fff0dd;color:#93600d;font-weight:800}
+.section{padding:88px 0}.section.gray{background:var(--bg)}.kicker{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#2a6688;font-weight:850;margin-bottom:8px}h2{font-size:clamp(32px,4vw,46px);line-height:1.1;letter-spacing:-.03em;margin:0 0 15px}.sectionIntro{max-width:720px;color:var(--muted);font-size:18px;margin-bottom:38px}
+.painGrid,.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{border:1px solid var(--line);border-radius:var(--radius);padding:25px;background:#fff}.card strong{font-size:18px;display:block;margin:9px 0 6px}.card p{color:var(--muted);margin:0;font-size:14px}.icon{width:42px;height:42px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-weight:900;color:#276583}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:38px}.step{position:relative;padding-right:26px}.step:not(:last-child):after{content:"→";position:absolute;right:8px;top:11px;color:#b3bdc5;font-size:24px}.stepNo{font-size:12px;color:#357090;font-weight:900}.step b{display:block;font-size:17px;margin:4px 0}.step span{color:var(--muted);font-size:13px}
+.partner{display:grid;grid-template-columns:1fr .8fr;gap:40px;align-items:center;background:#102a3e;color:#fff;border-radius:28px;padding:42px}.partner p{color:#c6d4de}.checks{display:grid;gap:11px}.check{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.07);padding:12px 14px;border-radius:12px;font-size:14px}.check:before{content:"✓";font-weight:900;color:#8cd9b4}
+.faq{max-width:850px}.faqItem{padding:20px 0;border-bottom:1px solid var(--line)}.faqItem b{display:block;margin-bottom:5px}.faqItem p{margin:0;color:var(--muted)}
+footer{padding:32px 0 45px;border-top:1px solid #edf0f2;color:#7a858e;font-size:13px}
+@media(max-width:900px){.heroGrid,.partner{grid-template-columns:1fr}.mock{transform:none}.painGrid,.featureGrid{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr;gap:25px}.step:after{display:none}}
+@media(max-width:620px){.wrap{width:min(100% - 26px,1160px)}.navlinks a:not(.btn){display:none}.hero{padding:65px 0 55px}.painGrid,.featureGrid,.flow{grid-template-columns:1fr}.partner{padding:28px 22px}h1{font-size:43px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+ <a class="brand" href="#"><span class="mark">R</span>ReklaFlow</a>
+ <div class="navlinks"><a href="#ablauf">Ablauf</a><a href="#funktionen">Funktionen</a><a href="#praxispartner">Praxispartner</a><a class="btn" href="index.html">Demo öffnen</a></div>
+</nav>
+</div>
+
+<header class="hero">
+ <div class="wrap heroGrid">
+  <div>
+   <div class="eyebrow">Lieferantenreklamationen · schlank gedacht</div>
+   <h1>Weniger Excel.<br><span>Mehr Überblick.</span></h1>
+   <p class="lead">ReklaFlow bringt Lieferantenreklamationen, Fristen, Stellungnahmen und 8D-Bearbeitung in einen klaren Ablauf – ohne ein komplettes CAQ-System einzuführen.</p>
+   <div class="cta"><a class="btn primary" href="index.html">Klickbare Demo ansehen</a><a class="btn" href="#praxispartner">Praxispartner werden</a></div>
+   <div class="fine">Frühe Testphase · kein Vertrag · kein Systemwechsel notwendig.</div>
+  </div>
+  <div class="mock" aria-label="ReklaFlow Dashboard Vorschau">
+   <div class="window"><div class="windowTop"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    <div class="dash">
+     <div class="dashTitle"><span>Offene Reklamationen</span><span class="tinyButton">+ Neue Reklamation</span></div>
+     <div class="stats"><div class="stat"><small>Offen</small><b>7</b></div><div class="stat"><small>Überfällig</small><b>2</b></div><div class="stat"><small>8D offen</small><b>3</b></div></div>
+     <div class="miniTable">
+      <div class="row"><b>REK-142</b><span>Müller Kunststofftechnik</span><span class="pill">Stellungnahme</span></div>
+      <div class="row"><b>REK-141</b><span>Haas Drehteile GmbH</span><span class="pill">8D offen</span></div>
+      <div class="row"><b>REK-140</b><span>Kroner Verpackung</span><span class="pill">Frist heute</span></div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</header>
+
+<section class="section">
+ <div class="wrap">
+  <div class="kicker">Das Problem</div>
+  <h2>Eine Reklamation. Fünf Ablageorte.</h2>
+  <p class="sectionIntro">Gerade in kleineren und mittleren Betrieben entsteht der Überblick oft aus einzelnen Werkzeugen statt aus einem durchgängigen Prozess.</p>
+  <div class="painGrid">
+   <div class="card"><div class="icon">01</div><strong>Excel-Liste</strong><p>Reklamationsnummern, Status und Fristen werden manuell gepflegt.</p></div>
+   <div class="card"><div class="icon">02</div><strong>Outlook</strong><p>Stellungnahmen, Erinnerungen und Rückfragen liegen verteilt in Mailverläufen.</p></div>
+   <div class="card"><div class="icon">03</div><strong>Netzlaufwerk</strong><p>Fotos, Lieferscheine und 8D-Berichte müssen zum richtigen Fall gefunden werden.</p></div>
+  </div>
+ </div>
+</section>
+
+<section class="section gray" id="ablauf">
+ <div class="wrap">
+  <div class="kicker">Der ReklaFlow-Ablauf</div>
+  <h2>Vom Fehler bis zum Abschluss.</h2>
+  <p class="sectionIntro">Kein neues ERP. Keine monatelange Einführung. ReklaFlow konzentriert sich nur auf den Reklamationsprozess.</p>
+  <div class="flow">
+   <div class="step"><div class="stepNo">SCHRITT 1</div><b>Erfassen</b><span>Lieferant, Artikel, Menge, Fehler, Bilder und Frist.</span></div>
+   <div class="step"><div class="stepNo">SCHRITT 2</div><b>Versenden</b><span>Der Lieferant erhält einen eindeutigen Fall mit allen Informationen.</span></div>
+   <div class="step"><div class="stepNo">SCHRITT 3</div><b>Nachverfolgen</b><span>Stellungnahme, Sofortmaßnahme und 8D bleiben am Vorgang.</span></div>
+   <div class="step"><div class="stepNo">SCHRITT 4</div><b>Abschließen</b><span>Maßnahmen und Verlauf bleiben später nachvollziehbar.</span></div>
+  </div>
+ </div>
+</section>
+
+<section class="section" id="funktionen">
+ <div class="wrap">
+  <div class="kicker">Bewusst kein CAQ-Monster</div>
+  <h2>Nur das, was der Reklamationsprozess braucht.</h2>
+  <p class="sectionIntro">Die erste Version wird gemeinsam mit Qualitätsabteilungen entwickelt. Funktionen kommen nur hinein, wenn sie den Ablauf wirklich vereinfachen.</p>
+  <div class="featureGrid">
+   <div class="card"><div class="icon">R</div><strong>Reklamationsakte</strong><p>Alle relevanten Daten, Fotos, Dokumente und Aktivitäten an einem Fall.</p></div>
+   <div class="card"><div class="icon">⏱</div><strong>Fristen</strong><p>Offene Rückmeldungen werden sichtbar, statt in persönlichen Wiedervorlagen zu verschwinden.</p></div>
+   <div class="card"><div class="icon">↗</div><strong>Lieferantenlink</strong><p>Lieferanten können reagieren, ohne zuerst ein eigenes Benutzerkonto anzulegen.</p></div>
+   <div class="card"><div class="icon">8D</div><strong>Stellungnahme & 8D</strong><p>Rückmeldungen gehören direkt zur Reklamation und nicht in separate Mailordner.</p></div>
+   <div class="card"><div class="icon">✓</div><strong>Nachvollziehbarer Abschluss</strong><p>Wer hat wann reagiert? Was wurde vereinbart? Was wurde abgeschlossen?</p></div>
+   <div class="card"><div class="icon">∑</div><strong>Einfache Auswertungen</strong><p>Welche Lieferanten verursachen welche Fälle und wo bleiben Rückmeldungen hängen?</p></div>
+  </div>
+ </div>
+</section>
+
+<section class="section gray" id="praxispartner">
+ <div class="wrap">
+  <div class="partner">
+   <div>
+    <div class="kicker" style="color:#8ec7e7">Praxispartner gesucht</div>
+    <h2>Wir wollen ReklaFlow nicht am Schreibtisch erfinden.</h2>
+    <p>Für die erste Version suchen wir wenige Qualitätsabteilungen, die ihren heutigen Reklamationsprozess mit uns durchgehen und den frühen Stand testen. Ziel ist kein Verkaufsgespräch, sondern ein Werkzeug, das im Alltag wirklich Zeit spart.</p>
+    <div class="cta"><a class="btn primary" style="background:#fff;color:#173b57;border-color:#fff" href="index.html">Demo ansehen</a></div>
+   </div>
+   <div class="checks">
+    <div class="check">Früher Zugang zur Entwicklung</div>
+    <div class="check">Eigene Anforderungen direkt einbringen</div>
+    <div class="check">Keine Verpflichtung und kein Systemwechsel</div>
+    <div class="check">Testphase für Praxispartner kostenfrei</div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="section">
+ <div class="wrap faq">
+  <div class="kicker">Kurz erklärt</div><h2>Was ReklaFlow nicht sein soll.</h2>
+  <div class="faqItem"><b>Ersetzt ReklaFlow SAP oder ein komplettes CAQ-System?</b><p>Nein. Der Produktkern ist absichtlich auf Lieferantenreklamationen begrenzt.</p></div>
+  <div class="faqItem"><b>Muss der Lieferant ReklaFlow kaufen?</b><p>Nein. Der geplante Lieferantenprozess soll ohne eigenes kostenpflichtiges Lieferantenkonto funktionieren.</p></div>
+  <div class="faqItem"><b>Ist die Software bereits produktionsreif?</b><p>Noch nicht. Der aktuelle Stand ist ein klickbarer MVP, mit dem wir Ablauf und Anforderungen mit Praxispartnern validieren.</p></div>
+ </div>
+</section>
+
+<footer><div class="wrap"><b>ReklaFlow</b> · Ein schlanker Workflow für Lieferantenreklamationen · MVP 2026</div></footer>
+</body>
+</html>
