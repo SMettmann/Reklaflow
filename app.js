@@ -61,7 +61,7 @@ function supplier(id){return state.suppliers.find(function(s){return s.id===id})
 function nextId(){var max=state.complaints.reduce(function(m,c){return Math.max(m,Number(c.seq)||0)},0)+1;return {seq:max,id:(state.settings.prefix||"REK")+"-"+new Date().getFullYear()+"-"+String(max).padStart(4,"0")}}
 function addHistory(c,text){c.history=c.history||[];c.history.push({date:today(),text:text})}
 function closureCheck(c){
- var needs8D=c.requested==="8D-Bericht"||c.status==="8D offen"||Object.values(c.d8||{}).some(Boolean);
+ var needs8D=c.requested==="8D-Bericht"||c.status==="8D offen";
  var d8ok=!needs8D||["d1","d2","d3","d4","d5","d6","d7","d8"].every(function(k){return String((c.d8||{})[k]||"").trim()});
  var items=[
   {label:"Materialentscheidung getroffen",ok:!!(c.internal&&c.internal.disposition&&c.internal.disposition!=="Noch offen")},
@@ -207,7 +207,8 @@ function createCase(){
  var sup=document.getElementById("cSupplier").value,article=document.getElementById("cArticle").value.trim(),bad=Number(document.getElementById("cBad").value),issue=document.getElementById("cIssue").value.trim();
  if(!sup||!article||!bad||!issue){alert("Bitte Lieferant, Artikelnummer, Menge n.i.O. und Fehlerbeschreibung ausfüllen.");return}
  var n=nextId(), files=Array.from(document.getElementById("cFiles").files||[]).map(function(f){return{name:f.name,size:Math.max(1,Math.round(f.size/1024))+" KB"}});
- var c={id:n.id,seq:n.seq,supplierId:sup,article:article,articleName:document.getElementById("cArticleName").value.trim(),po:document.getElementById("cPO").value.trim(),delivery:document.getElementById("cDelivery").value.trim(),batch:document.getElementById("cBatch").value.trim(),deliveryDate:document.getElementById("cDeliveryDate").value,qty:Number(document.getElementById("cQty").value)||0,bad:bad,category:document.getElementById("cCategory").value,issue:issue,priority:document.getElementById("cPriority").value,requested:document.getElementById("cRequested").value,status:"Neu",created:today(),due:document.getElementById("cDue").value,cost:Number(document.getElementById("cCost").value)||0,attachments:files,history:[{date:today(),text:"Reklamation angelegt"}],d8:{d1:"",d2:issue,d3:"",d4:"",d5:"",d6:"",d7:"",d8:""}};
+ var initialCost=Number(document.getElementById("cCost").value)||0;
+ var c={id:n.id,seq:n.seq,supplierId:sup,article:article,articleName:document.getElementById("cArticleName").value.trim(),po:document.getElementById("cPO").value.trim(),delivery:document.getElementById("cDelivery").value.trim(),batch:document.getElementById("cBatch").value.trim(),deliveryDate:document.getElementById("cDeliveryDate").value,qty:Number(document.getElementById("cQty").value)||0,bad:bad,category:document.getElementById("cCategory").value,issue:issue,priority:document.getElementById("cPriority").value,requested:document.getElementById("cRequested").value,status:"Neu",created:today(),due:document.getElementById("cDue").value,cost:initialCost,attachments:files,history:[{date:today(),text:"Reklamation angelegt"}],d8:{d1:"",d2:issue,d3:"",d4:"",d5:"",d6:"",d7:"",d8:""},internal:{detectedAt:"Wareneingang",owner:state.settings.contact||"Qualitätsmanagement",blockedQty:bad,disposition:"Noch offen",containment:"",stockImpact:"Unklar",lineStop:false},supplierResponse:{acknowledged:false,comment:"",replacementDate:""},costTracking:{claimed:initialCost,status:initialCost>0?"Offen":"Nicht relevant"},effectiveness:{checked:false,note:""}};
  state.complaints.unshift(c);save();closeModal("caseModal");document.getElementById("caseForm").reset();selectedId=c.id;showView("detail");toast("Reklamation "+c.id+" angelegt")}
 window.createCase=createCase;
 
@@ -222,7 +223,7 @@ function saveSettings(){state.settings.company=document.getElementById("setCompa
 
 function exportData(){var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="reklaflow-backup-"+today()+".json";a.click();URL.revokeObjectURL(url)}window.exportData=exportData;
 function importData(input){var file=input.files&&input.files[0];if(!file)return;var r=new FileReader();r.onload=function(){try{var data=JSON.parse(r.result);if(!data.complaints||!data.suppliers)throw new Error("Ungültige Datei");state=data;save();renderAll();toast("Backup importiert")}catch(e){alert("Backup konnte nicht gelesen werden.")}input.value=""};r.readAsText(file)}window.importData=importData;
-function resetDemo(){if(!confirm("Demo-Daten wirklich zurücksetzen?"))return;state=seed();save();renderAll();showView("dashboard");toast("Demo zurückgesetzt")}window.resetDemo=resetDemo;
+function resetDemo(){if(!confirm("Demo-Daten wirklich zurücksetzen?"))return;state=seed();migrate();save();renderAll();showView("dashboard");toast("Demo zurückgesetzt")}window.resetDemo=resetDemo;
 
 function copySupplierLink(){
  var c=current();if(!c)return;var url=location.href.split("?")[0].split("#")[0]+"?portal="+encodeURIComponent(c.id);
