@@ -146,6 +146,19 @@
  </div>
 </div>
 
+<div class="modal" id="sendModal">
+ <div class="dialog sm">
+  <div class="dialogHead"><div><h2>Reklamation versenden</h2><div class="small">E-Mail-Vorschau für den Lieferanten</div></div><button class="close" onclick="closeModal('sendModal')">×</button></div>
+  <div class="dialogBody"><div class="formGrid">
+   <div class="field full"><label>Empfänger</label><input id="sendTo" type="email"></div>
+   <div class="field full"><label>Betreff</label><input id="sendSubject"></div>
+   <div class="field full"><label>Nachricht</label><textarea id="sendBody" style="min-height:230px"></textarea></div>
+   <div class="field full"><div class="alert">Im lokalen MVP wird noch keine echte E-Mail verschickt. Der Text kann kopiert werden; „Als versendet markieren“ startet den weiteren Workflow.</div></div>
+  </div></div>
+  <div class="dialogFoot"><button class="btn" onclick="copySendText()">Text kopieren</button><button class="btn" onclick="closeModal('sendModal')">Abbrechen</button><button class="btn primary" onclick="markSent()">Als versendet markieren</button></div>
+ </div>
+</div>
+
 <div id="toast" style="position:fixed;right:18px;bottom:18px;background:#102a3e;color:#fff;border-radius:11px;padding:11px 14px;font-weight:750;z-index:80;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none"></div>
 <script src="app.js"></script>
 </body>
