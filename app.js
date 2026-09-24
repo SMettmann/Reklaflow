@@ -32,11 +32,46 @@ function seed(){
   ]
  };
 }
-function load(){try{state=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!state||!state.complaints)state=seed();save()}
+function migrate(){
+ state.settings=state.settings||{};
+ state.suppliers=state.suppliers||[];
+ state.complaints=(state.complaints||[]).map(function(c){
+  c.internal=c.internal||{};
+  if(c.internal.detectedAt==null)c.internal.detectedAt="Wareneingang";
+  if(c.internal.owner==null)c.internal.owner=state.settings.contact||"Qualitätsmanagement";
+  if(c.internal.blockedQty==null)c.internal.blockedQty=Number(c.bad)||0;
+  if(c.internal.disposition==null)c.internal.disposition="Noch offen";
+  if(c.internal.containment==null)c.internal.containment="";
+  if(c.internal.stockImpact==null)c.internal.stockImpact="Unklar";
+  if(c.internal.lineStop==null)c.internal.lineStop=false;
+  c.supplierResponse=c.supplierResponse||{};
+  if(c.supplierResponse.acknowledged==null)c.supplierResponse.acknowledged=false;
+  if(c.supplierResponse.comment==null)c.supplierResponse.comment="";
+  if(c.supplierResponse.replacementDate==null)c.supplierResponse.replacementDate="";
+  c.costTracking=c.costTracking||{};
+  if(c.costTracking.claimed==null)c.costTracking.claimed=Number(c.cost)||0;
+  if(c.costTracking.status==null)c.costTracking.status=(Number(c.cost)||0)>0?"Offen":"Nicht relevant";
+  if(c.effectiveness==null)c.effectiveness={checked:false,note:""};
+  return c;
+ });
+}
+function load(){try{state=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!state||!state.complaints)state=seed();migrate();save()}
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
 function supplier(id){return state.suppliers.find(function(s){return s.id===id})||{name:"Unbekannter Lieferant",supplierNo:"–"}}
 function nextId(){var max=state.complaints.reduce(function(m,c){return Math.max(m,Number(c.seq)||0)},0)+1;return {seq:max,id:(state.settings.prefix||"REK")+"-"+new Date().getFullYear()+"-"+String(max).padStart(4,"0")}}
 function addHistory(c,text){c.history=c.history||[];c.history.push({date:today(),text:text})}
+function closureCheck(c){
+ var needs8D=c.requested==="8D-Bericht"||c.status==="8D offen"||Object.values(c.d8||{}).some(Boolean);
+ var d8ok=!needs8D||["d1","d2","d3","d4","d5","d6","d7","d8"].every(function(k){return String((c.d8||{})[k]||"").trim()});
+ var items=[
+  {label:"Materialentscheidung getroffen",ok:!!(c.internal&&c.internal.disposition&&c.internal.disposition!=="Noch offen")},
+  {label:"Lieferantenreaktion dokumentiert",ok:!!(c.supplierResponse&&(c.supplierResponse.acknowledged||String(c.supplierResponse.comment||"").trim()||String((c.d8||{}).d3||"").trim()))},
+  {label:"8D vollständig",ok:d8ok,optional:!needs8D},
+  {label:"Kosten geklärt",ok:!(Number(c.costTracking&&c.costTracking.claimed)||0)||["Anerkannt","Abgelehnt","Verrechnet","Nicht relevant"].indexOf(c.costTracking&&c.costTracking.status)>=0},
+  {label:"Wirksamkeit geprüft",ok:!!(c.effectiveness&&c.effectiveness.checked)}
+ ];
+ return {items:items,ok:items.every(function(x){return x.ok||x.optional})};
+}
 
 function showView(id){
  document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active")});
@@ -89,7 +124,7 @@ function renderSuppliers(){
 function d8Progress(c){var keys=["d1","d2","d3","d4","d5","d6","d7","d8"],done=keys.filter(function(k){return c.d8&&String(c.d8[k]||"").trim()}).length;return {done:done,pct:Math.round(done/8*100)}}
 function render8DList(){
  var list=state.complaints.filter(function(c){return c.requested==="8D-Bericht"||c.status==="8D offen"||Object.values(c.d8||{}).some(Boolean)});
- document.getElementById("eightdRows").innerHTML=list.length?list.map(function(c){var s=supplier(c.supplierId),p=d8Progress(c);return '<tr onclick="openDetail(\''+esc(c.id)+'\',true)"><td><div class="strong">'+esc(c.id)+'</div><div class="small">'+esc(s.name)+'</div></td><td>'+esc(c.article)+'<div class="small">'+esc(c.articleName)+'</div></td><td style="min-width:150px"><div class="barLabel"><span>'+p.done+'/8 Felder</span><b>'+p.pct+' %</b></div><div class="progress"><span style="width:'+p.pct+'%"></span></div></td><td>'+badge(c.status)+'</td><td>'+fmt(c.due)+'</td></tr>'}).join(""):'<tr><td colspan="5"><div class="empty">Noch keine 8D-Fälle.</div></td></tr>';
+ document.getElementById("eightdRows").innerHTML=list.length?list.map(function(c){var s=supplier(c.supplierId),p=d8Progress(c),close=closureCheck(c);return '<tr onclick="openDetail(\''+esc(c.id)+'\',true)"><td><div class="strong">'+esc(c.id)+'</div><div class="small">'+esc(s.name)+'</div></td><td>'+esc(c.article)+'<div class="small">'+esc(c.articleName)+'</div></td><td style="min-width:150px"><div class="barLabel"><span>'+p.done+'/8 Felder</span><b>'+p.pct+' %</b></div><div class="progress"><span style="width:'+p.pct+'%"></span></div></td><td>'+badge(c.status)+'</td><td>'+fmt(c.due)+'</td></tr>'}).join(""):'<tr><td colspan="5"><div class="empty">Noch keine 8D-Fälle.</div></td></tr>';
 }
 
 function renderAnalytics(){
@@ -116,17 +151,34 @@ function renderDetail(){
  '<div class="card" style="margin-bottom:16px"><div class="cardHead"><div><div class="small">'+esc(c.id)+'</div><h2>'+esc(s.name)+'</h2></div><div class="actions">'+badge(c.status)+'<button class="btn sm" onclick="printCase()">PDF / Drucken</button><button class="btn sm" onclick="openPortal()">Lieferantenansicht</button></div></div><div class="cardBody"><div class="metaGrid">'+
  '<div class="meta"><span>Artikel</span><b>'+esc(c.article)+' · '+esc(c.articleName)+'</b></div><div class="meta"><span>Bestellung / Lieferschein</span><b>'+esc(c.po||"–")+' / '+esc(c.delivery||"–")+'</b></div><div class="meta"><span>Charge</span><b>'+esc(c.batch||"–")+'</b></div>'+
  '<div class="meta"><span>Beanstandung</span><b>'+esc(c.bad)+' von '+esc(c.qty||"–")+' Teilen</b></div><div class="meta"><span>Priorität</span><b>'+esc(c.priority)+'</b></div><div class="meta"><span>Antwortfrist</span><b>'+fmt(c.due)+' · '+esc(dueText(c))+'</b></div></div></div></div>'+
+ '<div class="card" style="margin-bottom:16px"><div class="cardHead"><div><h3>Interne Bewertung</h3><div class="small">Sperrung, Materialentscheidung und interne Absicherung</div></div><button class="btn sm noPrint" onclick="saveInternal()">Speichern</button></div><div class="cardBody"><div class="formGrid">'+
+ '<div class="field"><label>Fehler entdeckt bei</label><select id="iDetected"><option '+(c.internal.detectedAt==="Wareneingang"?"selected":"")+'>Wareneingang</option><option '+(c.internal.detectedAt==="Produktion"?"selected":"")+'>Produktion</option><option '+(c.internal.detectedAt==="Endprüfung"?"selected":"")+'>Endprüfung</option><option '+(c.internal.detectedAt==="Kunde"?"selected":"")+'>Kunde</option></select></div>'+
+ '<div class="field"><label>Interner Verantwortlicher</label><input id="iOwner" value="'+esc(c.internal.owner||"")+'"></div>'+
+ '<div class="field"><label>Gesperrte Menge</label><input id="iBlocked" type="number" min="0" value="'+esc(c.internal.blockedQty||0)+'"></div>'+
+ '<div class="field"><label>Bestandsauswirkung</label><select id="iImpact"><option '+(c.internal.stockImpact==="Unklar"?"selected":"")+'>Unklar</option><option '+(c.internal.stockImpact==="Nur Lieferung"?"selected":"")+'>Nur Lieferung</option><option '+(c.internal.stockImpact==="Lagerbestand betroffen"?"selected":"")+'>Lagerbestand betroffen</option><option '+(c.internal.stockImpact==="Produktion betroffen"?"selected":"")+'>Produktion betroffen</option></select></div>'+
+ '<div class="field"><label>Materialentscheidung</label><select id="iDisposition"><option '+(c.internal.disposition==="Noch offen"?"selected":"")+'>Noch offen</option><option '+(c.internal.disposition==="Rücksendung"?"selected":"")+'>Rücksendung</option><option '+(c.internal.disposition==="Sortieren"?"selected":"")+'>Sortieren</option><option '+(c.internal.disposition==="Nacharbeit"?"selected":"")+'>Nacharbeit</option><option '+(c.internal.disposition==="Verschrotten"?"selected":"")+'>Verschrotten</option><option '+(c.internal.disposition==="Sonderfreigabe"?"selected":"")+'>Sonderfreigabe</option><option '+(c.internal.disposition==="Ersatzlieferung"?"selected":"")+'>Ersatzlieferung</option></select></div>'+
+ '<div class="field"><label class="checkline"><input id="iLineStop" type="checkbox" '+(c.internal.lineStop?"checked":"")+'> Produktions-/Linienstopp</label></div>'+
+ '<div class="field full"><label>Interne Sofortmaßnahme / Absicherung</label><textarea id="iContainment" placeholder="z. B. Bestand sperren, 100-%-Prüfung, Sortierung...">'+esc(c.internal.containment||"")+'</textarea></div>'+
+ '</div></div></div>'+
  '<div class="detailColumns"><div>'+
  '<div class="card" style="margin-bottom:16px"><div class="cardHead"><h3>Fehler & Dokumente</h3><button class="btn sm noPrint" onclick="openEditCase()">Bearbeiten</button></div><div class="cardBody"><div class="sectionTitle">Fehlerkategorie</div><div>'+badge(c.category||"Sonstige")+'</div><div class="sectionTitle">Fehlerbeschreibung</div><p class="issue">'+esc(c.issue)+'</p><div class="sectionTitle">Anhänge</div>'+renderAttachments(c)+'</div></div>'+
  '<div class="card" id="eightDPanel"><div class="cardHead"><div><h3>8D / Stellungnahme</h3><div class="small">'+p.done+' von 8 Abschnitten ausgefüllt</div></div><div style="min-width:120px"><div class="progress"><span style="width:'+p.pct+'%"></span></div></div></div><div class="cardBody"><div class="d8grid">'+dhtml+'</div><div class="actions noPrint" style="margin-top:13px"><button class="btn primary" onclick="save8D()">8D speichern</button><button class="btn" onclick="setCaseStatus(\'Wirksamkeitsprüfung\')">Zur Wirksamkeitsprüfung</button></div></div></div>'+
  '</div><div>'+
- '<div class="card" style="margin-bottom:16px"><div class="cardHead"><h3>Bearbeitung</h3></div><div class="cardBody"><div class="sectionTitle" style="margin-top:0">Geforderte Reaktion</div><div class="strong">'+esc(c.requested)+'</div><div class="sectionTitle">Status ändern</div><select class="select" id="detailStatus" style="width:100%" onchange="setCaseStatus(this.value)">'+["Neu","Versendet","Wartet auf Stellungnahme","8D offen","Wirksamkeitsprüfung","Abgeschlossen"].map(function(x){return '<option '+(x===c.status?"selected":"")+'>'+x+'</option>'}).join("")+'</select><div class="sectionTitle">Reklamationskosten</div><div class="strong">'+money(c.cost)+'</div><div class="actions noPrint" style="margin-top:13px"><button class="btn" onclick="copySupplierLink()">Lieferantenlink kopieren</button></div></div></div>'+
+ '<div class="card" style="margin-bottom:16px"><div class="cardHead"><h3>Bearbeitung</h3></div><div class="cardBody"><div class="sectionTitle" style="margin-top:0">Geforderte Reaktion</div><div class="strong">'+esc(c.requested)+'</div><div class="sectionTitle">Status ändern</div><select class="select" id="detailStatus" style="width:100%" onchange="setCaseStatus(this.value)">'+["Neu","Versendet","Wartet auf Stellungnahme","8D offen","Wirksamkeitsprüfung","Abgeschlossen"].map(function(x){return '<option '+(x===c.status?"selected":"")+'>'+x+'</option>'}).join("")+'</select>'+
+ '<div class="sectionTitle">Kostenforderung</div><div class="formGrid" style="grid-template-columns:1fr"><div class="field"><label>Betrag</label><input id="costClaimed" type="number" min="0" step="0.01" value="'+esc(c.costTracking.claimed||0)+'"></div><div class="field"><label>Status</label><select id="costStatus"><option '+(c.costTracking.status==="Offen"?"selected":"")+'>Offen</option><option '+(c.costTracking.status==="Anerkannt"?"selected":"")+'>Anerkannt</option><option '+(c.costTracking.status==="Abgelehnt"?"selected":"")+'>Abgelehnt</option><option '+(c.costTracking.status==="Verrechnet"?"selected":"")+'>Verrechnet</option><option '+(c.costTracking.status==="Nicht relevant"?"selected":"")+'>Nicht relevant</option></select></div></div><button class="btn sm noPrint" style="margin-top:8px" onclick="saveCost()">Kosten speichern</button>'+
+ '<div class="sectionTitle">Wirksamkeitsprüfung</div><label class="checkline"><input id="effectivenessChecked" type="checkbox" '+(c.effectiveness.checked?"checked":"")+'> Maßnahme wirksam</label><textarea id="effectivenessNote" style="width:100%;min-height:65px;border:1px solid var(--line);border-radius:9px;padding:9px;margin-top:8px" placeholder="Prüfung / Nachweis...">'+esc(c.effectiveness.note||"")+'</textarea><button class="btn sm noPrint" style="margin-top:8px" onclick="saveEffectiveness()">Prüfung speichern</button>'+
+ '<div class="sectionTitle">Abschlusscheck</div><div class="closureList">'+close.items.map(function(x){return '<div class="closureItem '+((x.ok||x.optional)?"ok":"open")+'"><span>'+((x.ok||x.optional)?"✓":"!")+'</span><div><b>'+esc(x.label)+'</b>'+(x.optional?'<small>nicht erforderlich</small>':'')+'</div></div>'}).join("")+'</div>'+
+ '<div class="actions noPrint" style="margin-top:13px"><button class="btn" onclick="copySupplierLink()">Lieferantenlink kopieren</button><button class="btn primary" onclick="attemptClose()">Abschluss prüfen</button></div></div></div>'+
  '<div class="card"><div class="cardHead"><h3>Verlauf</h3></div><div class="cardBody"><div class="timeline">'+(c.history||[]).slice().reverse().map(function(h){return '<div class="event"><b>'+esc(h.text)+'</b><p>'+fmt(h.date)+'</p></div>'}).join("")+'</div></div></div>'+
  '</div></div>';
 }
+function saveInternal(){var c=current();if(!c)return;c.internal.detectedAt=document.getElementById("iDetected").value;c.internal.owner=document.getElementById("iOwner").value.trim();c.internal.blockedQty=Number(document.getElementById("iBlocked").value)||0;c.internal.stockImpact=document.getElementById("iImpact").value;c.internal.disposition=document.getElementById("iDisposition").value;c.internal.lineStop=document.getElementById("iLineStop").checked;c.internal.containment=document.getElementById("iContainment").value.trim();addHistory(c,"Interne Bewertung aktualisiert");save();renderDetail();toast("Interne Bewertung gespeichert")}window.saveInternal=saveInternal;
+function saveCost(){var c=current();if(!c)return;c.costTracking.claimed=Number(document.getElementById("costClaimed").value)||0;c.costTracking.status=document.getElementById("costStatus").value;c.cost=c.costTracking.claimed;addHistory(c,"Kostenstatus aktualisiert: "+c.costTracking.status);save();renderDetail();toast("Kosten gespeichert")}window.saveCost=saveCost;
+function saveEffectiveness(){var c=current();if(!c)return;c.effectiveness.checked=document.getElementById("effectivenessChecked").checked;c.effectiveness.note=document.getElementById("effectivenessNote").value.trim();addHistory(c,"Wirksamkeitsprüfung aktualisiert");save();renderDetail();toast("Wirksamkeitsprüfung gespeichert")}window.saveEffectiveness=saveEffectiveness;
+function attemptClose(){var c=current();if(!c)return;var chk=closureCheck(c);if(!chk.ok){var missing=chk.items.filter(function(x){return !x.ok&&!x.optional}).map(function(x){return "• "+x.label}).join("\n");alert("Für einen sauberen Abschluss fehlen noch:\n\n"+missing);return}c.status="Abgeschlossen";addHistory(c,"Reklamation nach Abschlussprüfung geschlossen");save();renderDetail();toast("Reklamation abgeschlossen")}window.attemptClose=attemptClose;
 function save8D(){var c=current();if(!c)return;c.d8=c.d8||{};["d1","d2","d3","d4","d5","d6","d7","d8"].forEach(function(k){c.d8[k]=document.getElementById("d_"+k).value.trim()});if(c.status==="Neu"||c.status==="Versendet"||c.status==="Wartet auf Stellungnahme")c.status="8D offen";addHistory(c,"8D-Bericht aktualisiert");save();renderDetail();toast("8D-Bericht gespeichert")}
 window.save8D=save8D;
-function setCaseStatus(status){var c=current();if(!c||!status)return;if(c.status!==status){c.status=status;addHistory(c,"Status geändert: "+status);save()}renderDetail()}
+function setCaseStatus(status){var c=current();if(!c||!status)return;if(status==="Abgeschlossen"){attemptClose();return}if(c.status!==status){c.status=status;addHistory(c,"Status geändert: "+status);save()}renderDetail()}
 window.setCaseStatus=setCaseStatus;
 function printCase(){window.print()}window.printCase=printCase;
 
@@ -141,10 +193,10 @@ function renderPortal(){
  '<div class="portalAction"><h3>8D-Bericht bearbeiten</h3><p>Öffnet den strukturierten 8D-Bereich des Falls.</p><button class="btn" onclick="supplierAction(\'8d\')">8D starten</button></div>'+
  '<div class="portalAction"><h3>📦 Ersatzlieferung</h3><p>Termin und Menge als Rückmeldung dokumentieren.</p><input id="replacementDate" type="date" class="select" style="width:100%"><button class="btn" style="margin-top:8px" onclick="supplierAction(\'replacement\')">Termin melden</button></div></div></div>';
 }
-function supplierAction(type){var c=current();if(!c)return;if(type==="confirm"){c.status="Wartet auf Stellungnahme";addHistory(c,"Lieferant hat den Eingang bestätigt");toast("Eingang bestätigt")}
- if(type==="d3"){var v=document.getElementById("portalD3").value.trim();c.d8=c.d8||{};c.d8.d3=v;c.status="8D offen";addHistory(c,"Sofortmaßnahme durch Lieferant aktualisiert");toast("Sofortmaßnahme gespeichert")}
+function supplierAction(type){var c=current();if(!c)return;if(type==="confirm"){c.status="Wartet auf Stellungnahme";c.supplierResponse.acknowledged=true;addHistory(c,"Lieferant hat den Eingang bestätigt");toast("Eingang bestätigt")}
+ if(type==="d3"){var v=document.getElementById("portalD3").value.trim();c.d8=c.d8||{};c.d8.d3=v;c.supplierResponse.comment=v;c.status="8D offen";addHistory(c,"Sofortmaßnahme durch Lieferant aktualisiert");toast("Sofortmaßnahme gespeichert")}
  if(type==="8d"){c.status="8D offen";addHistory(c,"Lieferant hat die 8D-Bearbeitung gestartet");save();showView("detail");setTimeout(function(){document.getElementById("eightDPanel").scrollIntoView({behavior:"smooth"})},100);return}
- if(type==="replacement"){var d=document.getElementById("replacementDate").value;if(!d){alert("Bitte Termin auswählen.");return}addHistory(c,"Ersatzlieferung angekündigt für "+fmt(d));toast("Ersatzlieferung dokumentiert")}
+ if(type==="replacement"){var d=document.getElementById("replacementDate").value;if(!d){alert("Bitte Termin auswählen.");return}c.supplierResponse.replacementDate=d;addHistory(c,"Ersatzlieferung angekündigt für "+fmt(d));toast("Ersatzlieferung dokumentiert")}
  save();renderPortal()}
 window.supplierAction=supplierAction;
 
