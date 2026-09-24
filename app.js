@@ -148,7 +148,7 @@ function renderDetail(){
  var dlabels={d1:"D1 · Team",d2:"D2 · Problembeschreibung",d3:"D3 · Sofortmaßnahmen",d4:"D4 · Fehlerursache",d5:"D5 · Abstellmaßnahmen",d6:"D6 · Umsetzung & Wirksamkeit",d7:"D7 · Vorbeugung",d8:"D8 · Abschluss"};
  var dhtml=Object.keys(dlabels).map(function(k){var val=c.d8&&c.d8[k]||"";return '<div class="dstep '+(val.trim()?"done":"")+'"><div class="dstepHead"><h3>'+dlabels[k]+'</h3><span class="small">'+(val.trim()?"ausgefüllt":"offen")+'</span></div><textarea id="d_'+k+'" placeholder="Eintrag zu '+esc(dlabels[k])+'">'+esc(val)+'</textarea></div>'}).join("");
  document.getElementById("detailContent").innerHTML=
- '<div class="card" style="margin-bottom:16px"><div class="cardHead"><div><div class="small">'+esc(c.id)+'</div><h2>'+esc(s.name)+'</h2></div><div class="actions">'+badge(c.status)+'<button class="btn sm" onclick="printCase()">PDF / Drucken</button><button class="btn sm" onclick="openPortal()">Lieferantenansicht</button></div></div><div class="cardBody"><div class="metaGrid">'+
+ '<div class="card" style="margin-bottom:16px"><div class="cardHead"><div><div class="small">'+esc(c.id)+'</div><h2>'+esc(s.name)+'</h2></div><div class="actions">'+badge(c.status)+(c.status==="Neu"?'<button class="btn sm primary" onclick="openSendModal()">Reklamation senden</button>':'')+'<button class="btn sm" onclick="printCase()">PDF / Drucken</button><button class="btn sm" onclick="openPortal()">Lieferantenansicht</button></div></div><div class="cardBody"><div class="metaGrid">'+
  '<div class="meta"><span>Artikel</span><b>'+esc(c.article)+' · '+esc(c.articleName)+'</b></div><div class="meta"><span>Bestellung / Lieferschein</span><b>'+esc(c.po||"–")+' / '+esc(c.delivery||"–")+'</b></div><div class="meta"><span>Charge</span><b>'+esc(c.batch||"–")+'</b></div>'+
  '<div class="meta"><span>Beanstandung</span><b>'+esc(c.bad)+' von '+esc(c.qty||"–")+' Teilen</b></div><div class="meta"><span>Priorität</span><b>'+esc(c.priority)+'</b></div><div class="meta"><span>Antwortfrist</span><b>'+fmt(c.due)+' · '+esc(dueText(c))+'</b></div></div></div></div>'+
  '<div class="card" style="margin-bottom:16px"><div class="cardHead"><div><h3>Interne Bewertung</h3><div class="small">Sperrung, Materialentscheidung und interne Absicherung</div></div><button class="btn sm noPrint" onclick="saveInternal()">Speichern</button></div><div class="cardBody"><div class="formGrid">'+
@@ -181,6 +181,29 @@ window.save8D=save8D;
 function setCaseStatus(status){var c=current();if(!c||!status)return;if(status==="Abgeschlossen"){attemptClose();return}if(c.status!==status){c.status=status;addHistory(c,"Status geändert: "+status);save()}renderDetail()}
 window.setCaseStatus=setCaseStatus;
 function printCase(){window.print()}window.printCase=printCase;
+
+function openSendModal(){
+ var c=current();if(!c)return;var s=supplier(c.supplierId);
+ document.getElementById("sendTo").value=s.email||"";
+ document.getElementById("sendSubject").value="Lieferantenreklamation "+c.id+" – "+c.article;
+ document.getElementById("sendBody").value="Guten Tag"+(s.contact?", "+s.contact:"")+",\n\nzu der Lieferung "+(c.delivery||"–")+" beanstanden wir "+c.bad+" von "+(c.qty||"–")+" Teilen des Artikels "+c.article+" ("+(c.articleName||"") +").\n\nFehler: "+c.issue+"\n\nBitte senden Sie uns bis "+fmt(c.due)+" die angeforderte Rückmeldung: "+c.requested+".\n\nDen Vorgang können Sie über den persönlichen ReklaFlow-Link bearbeiten.\n\nFreundliche Grüße\n"+(state.settings.contact||"Qualitätsmanagement")+"\n"+(state.settings.company||"");
+ document.getElementById("sendModal").classList.add("open");
+}window.openSendModal=openSendModal;
+function markSent(){
+ var c=current();if(!c)return;
+ c.status="Versendet";
+ c.sentAt=today();
+ addHistory(c,"Reklamation an Lieferant versendet");
+ save();
+ closeModal("sendModal");
+ renderDetail();
+ toast("Reklamation als versendet markiert");
+}window.markSent=markSent;
+function copySendText(){
+ var body=document.getElementById("sendBody").value;
+ var text="Betreff: "+document.getElementById("sendSubject").value+"\n\n"+body;
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast("E-Mail-Text kopiert")})}else{prompt("E-Mail-Text:",text)}
+}window.copySendText=copySendText;
 
 function openPortal(){showView("portal")}window.openPortal=openPortal;
 function renderPortal(){
