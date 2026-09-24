@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReklaFlow – Lieferantenreklamationen einfach steuern</title>
+<meta name="description" content="ReklaFlow bündelt Lieferantenreklamationen, Fristen, Stellungnahmen und 8D-Berichte in einem schlanken Workflow.">
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6d7484;--line:#e7eaf0;
+  --brand:#173b57;--brand2:#245f86;--soft:#edf4f8;--danger:#b93838;--dangerbg:#fff1f1;
+  --warn:#9a6810;--warnbg:#fff7df;--ok:#18734b;--okbg:#eaf8f1;--shadow:0 12px 30px rgba(18,32,51,.08);
+  --radius:18px;
+}
+*{box-sizing:border-box} body{margin:0;font:15px/1.5 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.sidebar{background:#102a3e;color:#fff;padding:24px 18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;margin-bottom:30px}
+.logo{width:36px;height:36px;border-radius:11px;background:#fff;color:#173b57;display:grid;place-items:center;font-weight:900}
+.brand small{display:block;color:#9eb4c5;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+.nav{display:grid;gap:7px}.nav button{border:0;background:transparent;color:#d8e4ec;text-align:left;padding:12px 13px;border-radius:11px;font-weight:650}
+.nav button:hover,.nav button.active{background:#1d4058;color:#fff}
+.sidefoot{position:absolute;left:18px;right:18px;bottom:22px;border-top:1px solid rgba(255,255,255,.12);padding-top:16px;color:#aac0cf;font-size:12px}
+.main{padding:30px 34px 60px;min-width:0}
+.topbar{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}
+h1{font-size:28px;line-height:1.2;margin:0 0 6px} h2{font-size:20px;margin:0} .sub{color:var(--muted)}
+.primary{border:0;background:var(--brand);color:#fff;padding:11px 16px;border-radius:11px;font-weight:750;box-shadow:0 6px 14px rgba(23,59,87,.18)}
+.primary:hover{background:var(--brand2)} .secondary{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:11px;font-weight:700;color:var(--text)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:22px}
+.stat{background:var(--card);padding:18px;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.stat .value{font-size:28px;font-weight:850;margin-top:3px}.stat .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.panels{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(270px,.7fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.cardbody{padding:18px 20px}.small{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse} th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 10px;border-bottom:1px solid var(--line)}
+td{padding:14px 10px;border-bottom:1px solid var(--line);vertical-align:middle} tr:last-child td{border-bottom:0} tbody tr{cursor:pointer} tbody tr:hover{background:#fafbfd}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.badge.red{color:var(--danger);background:var(--dangerbg)}.badge.orange{color:var(--warn);background:var(--warnbg)}.badge.green{color:var(--ok);background:var(--okbg)}.badge.blue{color:#245f86;background:#edf5fa}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.deadline{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.deadline:last-child{border-bottom:0}
+.deadline b{font-size:13px}.deadline span{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}.search{flex:1;min-width:240px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 13px}
+.view{display:none}.view.active{display:block}
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(10,24,36,.48);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}
+.dialog{width:min(780px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 25px 80px rgba(0,0,0,.25)}
+.dialoghead{padding:21px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dialogbody{padding:22px 24px}.dialogfoot{padding:18px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.close{border:0;background:#f2f4f7;width:34px;height:34px;border-radius:10px;font-size:19px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:750;color:#4d5564}
+.field input,.field select,.field textarea{width:100%;border:1px solid #dfe3e9;border-radius:10px;padding:11px 12px;background:#fff}.field textarea{min-height:94px;resize:vertical}
+.upload{border:1.5px dashed #cbd3dc;border-radius:13px;padding:22px;text-align:center;color:var(--muted);background:#fafbfc}
+.detailgrid{display:grid;grid-template-columns:1fr 320px;gap:18px}.meta{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.metabox{border:1px solid var(--line);border-radius:12px;padding:13px}.metabox span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}.metabox b{display:block;margin-top:4px}
+.timeline{display:grid;gap:0}.event{position:relative;padding:0 0 20px 27px;border-left:2px solid #dde4e9;margin-left:7px}.event:last-child{border-left-color:transparent}.event:before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:#245f86}.event b{font-size:13px}.event p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.portal{max-width:860px;margin:30px auto}.portalhero{background:#102a3e;color:#fff;border-radius:20px;padding:24px;margin-bottom:16px}.portalhero p{color:#c9d8e2;margin:8px 0 0}
+.portalactions{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.actionbox{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}.actionbox h3{margin:0 0 6px;font-size:15px}.actionbox p{font-size:12px;color:var(--muted);margin:0 0 12px}
+.notice{padding:12px 14px;border-radius:11px;background:var(--soft);color:#2c5875;font-size:13px;margin-bottom:16px}
+@media(max-width:1000px){.grid4{grid-template-columns:repeat(2,1fr)}.panels,.detailgrid{grid-template-columns:1fr}}
+@media(max-width:760px){.shell{display:block}.sidebar{position:static;height:auto;padding:16px}.brand{margin-bottom:12px}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap}.sidefoot{display:none}.main{padding:20px 14px 50px}.topbar{align-items:center}.topbar .sub{display:none}.grid4{grid-template-columns:1fr 1fr;gap:10px}.stat{padding:14px}.stat .value{font-size:23px}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.portalactions{grid-template-columns:1fr}table{min-width:700px}.tablewrap{overflow:auto}}
+</style>
+</head>
+<body>
+<div class="shell" id="appShell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">R</div><div>ReklaFlow<small>Supplier Quality</small></div></div>
+    <div class="nav">
+      <button class="active" data-view="dashboard">Übersicht</button>
+      <button data-view="complaints">Reklamationen</button>
+      <button data-view="suppliers">Lieferanten</button>
+      <button data-view="reports">Auswertungen</button>
+    </div>
+    <div class="sidefoot">MVP Demo · Daten werden lokal im Browser gespeichert.</div>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="dashboard">
+      <div class="topbar"><div><h1>Guten Morgen 👋</h1><div class="sub">Hier siehst du, welche Reklamationen gerade Aufmerksamkeit brauchen.</div></div><button class="primary" onclick="openNew()">+ Neue Reklamation</button></div>
+      <div class="grid4" id="stats"></div>
+      <div class="panels">
+        <div class="card">
+          <div class="cardhead"><div><h2>Offene Reklamationen</h2><div class="small">Zuletzt aktualisierte Fälle</div></div><button class="secondary" onclick="showView('complaints')">Alle anzeigen</button></div>
+          <div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Lieferant</th><th>Artikel</th><th>Status</th><th>Frist</th></tr></thead><tbody id="recentRows"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="cardhead"><div><h2>Fristen</h2><div class="small">Nächste fällige Rückmeldungen</div></div></div>
+          <div class="cardbody" id="deadlineList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="complaints">
+      <div class="topbar"><div><h1>Reklamationen</h1><div class="sub">Alle Lieferantenreklamationen an einem Ort.</div></div><button class="primary" onclick="openNew()">+ Neue Reklamation</button></div>
+      <div class="toolbar"><input class="search" id="search" placeholder="Nr., Lieferant oder Artikel suchen…" oninput="renderComplaints()"><select id="filter" class="secondary" onchange="renderComplaints()"><option value="">Alle Status</option><option>Neu</option><option>Wartet auf Stellungnahme</option><option>8D offen</option><option>Abgeschlossen</option></select></div>
+      <div class="card"><div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Lieferant</th><th>Artikel</th><th>Menge n.i.O.</th><th>Status</th><th>Frist</th></tr></thead><tbody id="complaintRows"></tbody></table></div></div>
+    </section>
+
+    <section class="view" id="suppliers">
+      <div class="topbar"><div><h1>Lieferanten</h1><div class="sub">Reklamationen und Reaktionszeiten im Blick.</div></div></div>
+      <div class="card"><div class="tablewrap"><table><thead><tr><th>Lieferant</th><th>Fälle</th><th>Offen</th><th>n.i.O. Teile</th><th>Letzte Reklamation</th></tr></thead><tbody id="supplierRows"></tbody></table></div></div>
+    </section>
+
+    <section class="view" id="reports">
+      <div class="topbar"><div><h1>Auswertungen</h1><div class="sub">Schlanke Kennzahlen statt Excel-Sammelsurium.</div></div></div>
+      <div class="grid4" id="reportStats"></div>
+      <div class="card"><div class="cardhead"><div><h2>Lieferantenübersicht</h2><div class="small">Basis für spätere PPM- und Kostenanalyse</div></div></div><div class="cardbody"><div class="notice">Im MVP zeigen wir bewusst nur Kennzahlen, die aus den Reklamationen entstehen. PPM, Reklamationskosten und Liefermengen kommen später als optionale Module.</div><div id="reportBars"></div></div></div>
+    </section>
+
+    <section class="view" id="detail">
+      <div class="topbar"><div><button class="secondary" onclick="showView('complaints')">← Zurück</button></div><button class="secondary" onclick="openPortal()">Lieferantenansicht öffnen</button></div>
+      <div id="detailContent"></div>
+    </section>
+
+    <section class="view" id="portal">
+      <div class="portal">
+        <button class="secondary" style="margin-bottom:14px" onclick="showView('detail')">← Interne Ansicht</button>
+        <div id="portalContent"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="newModal">
+  <div class="dialog">
+    <div class="dialoghead"><div><h2>Neue Lieferantenreklamation</h2><div class="small">In wenigen Schritten dokumentieren und versenden.</div></div><button class="close" onclick="closeNew()">×</button></div>
+    <div class="dialogbody">
+      <div class="formgrid">
+        <div class="field"><label>Lieferant *</label><input id="fSupplier" placeholder="z. B. Müller Kunststofftechnik"></div>
+        <div class="field"><label>Artikelnummer *</label><input id="fPart" placeholder="z. B. 4711-002"></div>
+        <div class="field"><label>Artikelbezeichnung</label><input id="fPartName" placeholder="z. B. Gehäuse links"></div>
+        <div class="field"><label>Lieferschein</label><input id="fDelivery" placeholder="z. B. LS-873942"></div>
+        <div class="field"><label>Liefermenge</label><input id="fQty" type="number" min="0" placeholder="500"></div>
+        <div class="field"><label>Menge n.i.O. *</label><input id="fBad" type="number" min="1" placeholder="32"></div>
+        <div class="field full"><label>Fehlerbeschreibung *</label><textarea id="fIssue" placeholder="Was wurde festgestellt? Wo befindet sich der Fehler?"></textarea></div>
+        <div class="field"><label>Antwortfrist</label><input id="fDue" type="date"></div>
+        <div class="field"><label>Geforderte Reaktion</label><select id="fReaction"><option>Stellungnahme</option><option>Sofortmaßnahme</option><option>8D-Bericht</option><option>Ersatzlieferung</option></select></div>
+        <div class="field full"><label>Fotos / Anhänge</label><div class="upload">📎 Drag & Drop folgt mit Backend.<br><span class="small">Im klickbaren MVP wird der Upload nur dargestellt.</span></div></div>
+      </div>
+    </div>
+    <div class="dialogfoot"><button class="secondary" onclick="closeNew()">Abbrechen</button><button class="primary" onclick="createComplaint()">Reklamation anlegen</button></div>
+  </div>
+</div>
+
+<script>
+const defaultData = [
+ {id:142,supplier:"Müller Kunststofftechnik",part:"4711-002",partName:"Gehäuse links",delivery:"LS-873942",qty:500,bad:32,issue:"Kratzer auf der Sichtfläche, teilweise bis auf das Grundmaterial.",status:"Wartet auf Stellungnahme",due:"2026-09-25",reaction:"Stellungnahme",created:"2026-09-22",updated:"2026-09-23"},
+ {id:141,supplier:"Haas Drehteile GmbH",part:"A-9182",partName:"Distanzhülse",delivery:"LS-77210",qty:1200,bad:18,issue:"Außendurchmesser außerhalb Zeichnungstoleranz.",status:"8D offen",due:"2026-09-27",reaction:"8D-Bericht",created:"2026-09-19",updated:"2026-09-22"},
+ {id:140,supplier:"Kroner Verpackung",part:"VP-220",partName:"Transporttray",delivery:"456782",qty:800,bad:74,issue:"Trays verformt, Bauteile liegen nicht positionssicher.",status:"Neu",due:"2026-09-24",reaction:"Sofortmaßnahme",created:"2026-09-23",updated:"2026-09-23"},
+ {id:139,supplier:"Müller Kunststofftechnik",part:"4711-008",partName:"Abdeckung rechts",delivery:"LS-872001",qty:300,bad:9,issue:"Farbabweichung gegenüber Freigabemuster.",status:"Abgeschlossen",due:"2026-09-20",reaction:"Stellungnahme",created:"2026-09-14",updated:"2026-09-21"}
+];
+let complaints = JSON.parse(localStorage.getItem("reklaflow_complaints")||"null") || defaultData;
+let selectedId = complaints[0]?.id;
+
+const fmt = d => d ? new Date(d+"T12:00:00").toLocaleDateString("de-DE") : "–";
+const esc = s => String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+const statusClass = s => s==="Abgeschlossen"?"green":s==="Neu"?"blue":s==="8D offen"?"orange":"red";
+const statusBadge = s => '<span class="badge '+statusClass(s)+'"><span class="dot"></span>'+esc(s)+'</span>';
+
+function save(){localStorage.setItem("reklaflow_complaints",JSON.stringify(complaints));renderAll()}
+function showView(id){
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+ if(id==="detail") renderDetail();
+ if(id==="portal") renderPortal();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+
+function renderStats(){
+ const open=complaints.filter(x=>x.status!=="Abgeschlossen");
+ const overdue=open.filter(x=>new Date(x.due)<new Date("2026-09-24T00:00:00"));
+ const eight=open.filter(x=>x.status==="8D offen");
+ const bad=open.reduce((a,x)=>a+(+x.bad||0),0);
+ document.getElementById("stats").innerHTML=[
+  ["Offene Fälle",open.length,"aktuell in Bearbeitung"],
+  ["Überfällig",overdue.length,"Rückmeldung fehlt"],
+  ["8D offen",eight.length,"Maßnahmen ausstehend"],
+  ["n.i.O. Teile",bad.toLocaleString("de-DE"),"in offenen Fällen"]
+ ].map((x,i)=>'<div class="stat"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div><div class="hint">'+x[2]+'</div></div>').join("");
+ document.getElementById("reportStats").innerHTML=[
+  ["Gesamtfälle",complaints.length,"seit Start"],
+  ["Abgeschlossen",complaints.filter(x=>x.status==="Abgeschlossen").length,"dokumentierte Abschlüsse"],
+  ["Lieferanten",new Set(complaints.map(x=>x.supplier)).size,"mit Reklamationen"],
+  ["n.i.O. gesamt",complaints.reduce((a,x)=>a+(+x.bad||0),0).toLocaleString("de-DE"),"beanstandete Teile"]
+ ].map(x=>'<div class="stat"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div><div class="hint">'+x[2]+'</div></div>').join("");
+}
+function row(x){return '<tr onclick="openDetail('+x.id+')"><td><b>REK-'+x.id+'</b></td><td>'+esc(x.supplier)+'</td><td><b>'+esc(x.part)+'</b><div class="small">'+esc(x.partName)+'</div></td><td>'+statusBadge(x.status)+'</td><td>'+fmt(x.due)+'</td></tr>'}
+function renderRecent(){document.getElementById("recentRows").innerHTML=complaints.filter(x=>x.status!=="Abgeschlossen").slice(0,5).map(row).join("")}
+function renderDeadlines(){
+ const open=[...complaints].filter(x=>x.status!=="Abgeschlossen").sort((a,b)=>a.due.localeCompare(b.due)).slice(0,5);
+ document.getElementById("deadlineList").innerHTML=open.map(x=>'<div class="deadline"><div><b>REK-'+x.id+' · '+esc(x.supplier)+'</b><span>'+esc(x.reaction)+'</span></div><div style="text-align:right"><b>'+fmt(x.due)+'</b><span>'+esc(x.status)+'</span></div></div>').join("") || '<div class="empty">Keine offenen Fristen.</div>';
+}
+function renderComplaints(){
+ const q=(document.getElementById("search")?.value||"").toLowerCase(), f=document.getElementById("filter")?.value||"";
+ const list=complaints.filter(x=>(!f||x.status===f)&&(!q||JSON.stringify(x).toLowerCase().includes(q)));
+ document.getElementById("complaintRows").innerHTML=list.map(x=>'<tr onclick="openDetail('+x.id+')"><td><b>REK-'+x.id+'</b><div class="small">'+fmt(x.created)+'</div></td><td>'+esc(x.supplier)+'</td><td><b>'+esc(x.part)+'</b><div class="small">'+esc(x.partName)+'</div></td><td>'+esc(x.bad)+' / '+esc(x.qty||"–")+'</td><td>'+statusBadge(x.status)+'</td><td>'+fmt(x.due)+'</td></tr>').join("") || '<tr><td colspan="6"><div class="empty">Keine Reklamationen gefunden.</div></td></tr>';
+}
+function suppliers(){
+ const map={};
+ complaints.forEach(x=>{map[x.supplier]??={name:x.supplier,cases:0,open:0,bad:0,last:x.created};let s=map[x.supplier];s.cases++;s.bad+=+x.bad||0;if(x.status!=="Abgeschlossen")s.open++;if(x.created>s.last)s.last=x.created});
+ return Object.values(map).sort((a,b)=>b.cases-a.cases);
+}
+function renderSuppliers(){document.getElementById("supplierRows").innerHTML=suppliers().map(s=>'<tr><td><b>'+esc(s.name)+'</b></td><td>'+s.cases+'</td><td>'+s.open+'</td><td>'+s.bad+'</td><td>'+fmt(s.last)+'</td></tr>').join("")}
+function renderReports(){
+ const max=Math.max(...suppliers().map(s=>s.cases),1);
+ document.getElementById("reportBars").innerHTML=suppliers().map(s=>'<div style="margin:15px 0"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:6px"><b>'+esc(s.name)+'</b><span class="small">'+s.cases+' Fälle</span></div><div style="height:9px;border-radius:99px;background:#edf0f4;overflow:hidden"><div style="width:'+(s.cases/max*100)+'%;height:100%;background:#245f86;border-radius:99px"></div></div></div>').join("");
+}
+function openDetail(id){selectedId=id;showView("detail")}
+function current(){return complaints.find(x=>x.id===selectedId)}
+function renderDetail(){
+ const x=current(); if(!x){showView("complaints");return}
+ document.getElementById("detailContent").innerHTML=`
+ <div class="card" style="margin-bottom:18px"><div class="cardhead"><div><div class="small">REK-${x.id}</div><h2>${esc(x.supplier)}</h2></div>${statusBadge(x.status)}</div>
+ <div class="cardbody"><div class="meta">
+   <div class="metabox"><span>Artikel</span><b>${esc(x.part)} · ${esc(x.partName)}</b></div>
+   <div class="metabox"><span>Lieferschein</span><b>${esc(x.delivery||"–")}</b></div>
+   <div class="metabox"><span>Beanstandung</span><b>${esc(x.bad)} von ${esc(x.qty||"–")} Teilen</b></div>
+   <div class="metabox"><span>Antwortfrist</span><b>${fmt(x.due)}</b></div>
+ </div></div></div>
+ <div class="detailgrid">
+   <div class="card"><div class="cardhead"><h2>Fehler & Bearbeitung</h2></div><div class="cardbody">
+     <div class="small">FEHLERBESCHREIBUNG</div><p style="font-size:16px">${esc(x.issue)}</p>
+     <div class="notice">📷 Im nächsten Schritt werden hier Fotos, Lieferschein und weitere Anhänge direkt am Fall gespeichert.</div>
+     <div style="display:flex;gap:10px;flex-wrap:wrap">
+       <button class="secondary" onclick="setStatus('Wartet auf Stellungnahme')">Stellungnahme anfordern</button>
+       <button class="secondary" onclick="setStatus('8D offen')">8D anfordern</button>
+       <button class="primary" onclick="setStatus('Abgeschlossen')">Fall abschließen</button>
+     </div>
+   </div></div>
+   <div class="card"><div class="cardhead"><h2>Verlauf</h2></div><div class="cardbody"><div class="timeline">
+     <div class="event"><b>Reklamation angelegt</b><p>${fmt(x.created)} · interne Erfassung</p></div>
+     <div class="event"><b>Lieferant informiert</b><p>Persönlicher Link bereitgestellt</p></div>
+     <div class="event"><b>${esc(x.reaction)} angefordert</b><p>Frist: ${fmt(x.due)}</p></div>
+   </div></div></div>
+ </div>`;
+}
+function setStatus(s){const x=current();if(!x)return;x.status=s;x.updated="2026-09-24";save();renderDetail()}
+function openPortal(){showView("portal")}
+function renderPortal(){
+ const x=current(); if(!x)return;
+ document.getElementById("portalContent").innerHTML=`
+ <div class="portalhero"><div class="small" style="color:#a9c0d0">REKLAMATION REK-${x.id}</div><h1 style="margin-top:5px">${esc(x.supplier)}</h1><p>Bitte bearbeiten Sie die untenstehende Reklamation bis ${fmt(x.due)}.</p></div>
+ <div class="card" style="margin-bottom:16px"><div class="cardbody"><div class="meta">
+  <div class="metabox"><span>Artikel</span><b>${esc(x.part)} · ${esc(x.partName)}</b></div>
+  <div class="metabox"><span>Menge</span><b>${esc(x.bad)} von ${esc(x.qty||"–")} beanstandet</b></div>
+ </div><div style="margin-top:16px"><div class="small">FEHLERBESCHREIBUNG</div><p>${esc(x.issue)}</p></div></div></div>
+ <div class="portalactions">
+  <div class="actionbox"><h3>✓ Reklamation bestätigen</h3><p>Bestätigen Sie den Erhalt und die Bearbeitung des Falls.</p><button class="secondary" onclick="supplierAction('Wartet auf Stellungnahme','Eingang bestätigt')">Eingang bestätigen</button></div>
+  <div class="actionbox"><h3>🛠 Sofortmaßnahme melden</h3><p>Teilen Sie mit, wie weitere fehlerhafte Lieferungen verhindert werden.</p><button class="secondary" onclick="supplierAction('8D offen','Sofortmaßnahme eingereicht')">Sofortmaßnahme senden</button></div>
+  <div class="actionbox"><h3>📄 8D / Stellungnahme</h3><p>Bericht hochladen oder strukturiert im Portal bearbeiten.</p><button class="secondary" onclick="supplierAction('8D offen','8D-Bearbeitung gestartet')">Bearbeitung starten</button></div>
+  <div class="actionbox"><h3>📦 Ersatzlieferung</h3><p>Termin und Menge einer Ersatzlieferung rückmelden.</p><button class="secondary" onclick="alert('MVP: Ersatzlieferungsdialog folgt im Backend-Schritt.')">Ersatzlieferung melden</button></div>
+ </div>`;
+}
+function supplierAction(status,msg){const x=current();if(!x)return;x.status=status;x.updated="2026-09-24";save();alert(msg+" – im MVP lokal gespeichert.");renderPortal()}
+
+function openNew(){
+ document.getElementById("newModal").classList.add("open");
+ const d=new Date();d.setDate(d.getDate()+5);document.getElementById("fDue").value=d.toISOString().slice(0,10);
+}
+function closeNew(){document.getElementById("newModal").classList.remove("open")}
+function createComplaint(){
+ const supplier=document.getElementById("fSupplier").value.trim(),part=document.getElementById("fPart").value.trim(),bad=+document.getElementById("fBad").value,issue=document.getElementById("fIssue").value.trim();
+ if(!supplier||!part||!bad||!issue){alert("Bitte Lieferant, Artikelnummer, Menge n.i.O. und Fehlerbeschreibung ausfüllen.");return}
+ const next=Math.max(...complaints.map(x=>x.id),100)+1, today=new Date().toISOString().slice(0,10);
+ const x={id:next,supplier,part,partName:document.getElementById("fPartName").value.trim(),delivery:document.getElementById("fDelivery").value.trim(),qty:+document.getElementById("fQty").value||0,bad,issue,status:"Neu",due:document.getElementById("fDue").value,reaction:document.getElementById("fReaction").value,created:today,updated:today};
+ complaints.unshift(x);selectedId=x.id;save();closeNew();
+ ["fSupplier","fPart","fPartName","fDelivery","fQty","fBad","fIssue"].forEach(id=>document.getElementById(id).value="");
+ showView("detail");
+}
+function renderAll(){renderStats();renderRecent();renderDeadlines();renderComplaints();renderSuppliers();renderReports()}
+renderAll();
+</script>
+</body>
+</html>
